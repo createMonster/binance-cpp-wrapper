@@ -1,4 +1,5 @@
-#include <binacpp.h>
+#include "binacpp.h"
+#include "binacpp_logger.h"
 
 string BinaCPP::api_key = "";
 string BinaCPP::secret_key = "";
@@ -21,3 +22,79 @@ BinaCPP::cleanup() {
 // -----
 // GET 
 //
+void
+BinaCPP::get_exchangeInfo(Json::Value &json_result) {
+    BinaCPP_logger::write_log("<BinaCPP::get_exchangeInfo>");
+    
+    string url(BINANCE_HOST);
+    url += "/api/v1/exchangeInfo";
+
+    string str_result;
+    curl_api(url, str_result);
+    if (str_result.size() > 0) {
+        try {
+            Json::Reader reader;
+            json_result.clear();
+            reader.parse(str_result, json_result);
+        }
+        catch (exception &e){
+            BinaCPP_logger::write_log("<BinaCPP::get_exchangeInfo> Error! %s", e.what());
+        }
+        BinaCPP_logger::write_log("<BinaCPP::get_exchangeInfo> Done.");
+    }
+    else {
+        BinaCPP_logger::write_log("<BinaCPP::get_exchangeInfo> failed to get anything");
+    }
+    
+    
+}
+
+
+
+
+
+
+void
+BinaCPP::curl_api(string &url, string &result_json) {
+    vector <string> v;
+    string action = "GET";
+    string post_data = "";
+    curl_api_with_header(url, result_json, v, post_data, action);
+}
+
+void
+BinaCPP::curl_api_with_header(string &url, string &result_json, vector<string> &extra_http_header, string &post_data, string &action) {
+    BinaCPP_logger::write_log("<BinaCPP::curl_api>");
+
+    CURLcode res;
+    if (BinaCPP::curl) {
+        curl_easy_setopt(BinaCPP::curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(BinaCPP::curl, CURLOPT_WRITEFUNCTION, BinaCPP::curl_cb);
+        curl_easy_setopt(BinaCPP::curl, CURLOPT_WRITEDATA, &result_json);
+        curl_easy_setopt(BinaCPP::curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(BinaCPP::curl, CURLOPT_ENCODING, "gzip");
+
+        if (extra_http_header.size() > 0) {
+            struct curl_slist *chunk = NULL;
+            for (int i = 0; i < extra_http_header.size(); i++) {
+                chunk = curl_slist_append(chunk, extra_http_header[i].c_str());
+            }
+            curl_easy_setopt(BinaCPP::curl, CURLOPT_HTTPHEADER, chunk);
+        }
+
+        if (post_data.size() > 0 || action == "POST" || action == "PUT" || action == "DELETE") {
+            if (action == "DELETE" || action == "PUT") {
+                curl_easy_setopt(BinaCPP::curl, CURLOPT_CUSTOMREQUEST, action.c_str());
+            }
+            curl_easy_setopt(BinaCPP::curl, CURLOPT_POSTFIELDS, post_data.c_str());
+        }
+
+        res = curl_easy_perform(BinaCPP:curl);
+        
+        //Check for errors
+        if (res != CURLE_OK) {
+            BinaCPP_logger::write_log(" <BinaCPP::curl_api> curl_easy_perform() failed: %s", curl_easy_strerror(res));
+        }
+    }
+    BinaCPP_logger::write_log("<BinaCPP::curl_api> done");
+}

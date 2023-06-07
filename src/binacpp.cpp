@@ -1,6 +1,8 @@
 #include "binacpp.h"
 #include "binacpp_logger.h"
 
+using std::atof;
+
 string BinaCPP::api_key = "";
 string BinaCPP::secret_key = "";
 CURL *BinaCPP::curl = NULL;
@@ -45,13 +47,73 @@ BinaCPP::get_exchangeInfo(Json::Value &json_result) {
     else {
         BinaCPP_logger::write_log("<BinaCPP::get_exchangeInfo> failed to get anything");
     }
-    
-    
 }
 
+void
+BinaCPP::get_serverTime(Json::Value &json_result) {
+    BinaCPP_logger::write_log("<BinaCPP::get_exchangeInfo>");
+    
+    string url(BINANCE_HOST);
+    url += "/api/v1/time";
+    string str_result;
+    curl_api(url, str_result);
 
+    if (str_result.size() > 0) {
+        try {
+            Json::Reader reader;
+            json_result.clear();
+            reader.parse(str_result, json_result);
+        }
+        catch (exception &e) {
+            BinaCPP_logger::write_log("<BinaCPP::get_serverTime> Error! %s", e.what());
+        }
+        BinaCPP_logger::write_log("<BinaCPP::get_serverTime> Done");
+    }
+    else {
+        BinaCPP_logger::write_log("<BinaCPP::get_serverTime> Failed to get anything");
+    }
+}
 
+void
+BinaCPP::get_allPrices(Json::Value json_result) {
+    BinaCPP_logger::write_log("<BinaCPP::get_allPrices>");
 
+    string url(BINANCE_HOST);
+    url += "/api/v1/ticker/allPrices";
+    string str_result;
+    curl_api(url, str_result);
+
+    if (str_result.size() > 0) {
+        try {
+            Json::Reader reader;
+            json_result.clear();
+            reader.parse(str_result, json_result);
+        }
+        catch (exception &e) {
+            BinaCPP_logger::write_log("<BinaCPP::get_allPrices> Error! %s", e.what());
+        }
+        BinaCPP_logger::write_log("<BinaCPP::get_allPrices> Done");
+    }
+    BinaCPP_logger::write_log("<BinaCPP::get_allPrices> Failed to get anything.");
+}
+
+double
+BinaCPP::get_price(const char *symbol) {
+    BinaCPP_logger::write_log("<BinaCPP::get_price>");
+    
+    double ret = 0.0;
+    Json::Value allTickers;
+    string str_symbol = string_toupper(symbol);
+    get_allPrices(allTickers);
+
+    for (int i = 0; i < allTickers.size(); i++) {
+        if (allTickers[i]["symbol"].asString() == str_symbol) {
+            ret = atof(allTickers[i]["price"].asString().c_str());
+            break;
+        }
+    }
+    return ret;
+}
 
 
 void

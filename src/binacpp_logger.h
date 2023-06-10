@@ -1,3 +1,14 @@
+#include <sys/time.h>
+#include <sys/types.h> 
+#include <sys/stat.h> 
+#include <stdarg.h>
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <fnmatch.h>
+
 
 #include <string>
 #include <iostream>

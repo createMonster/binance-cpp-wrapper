@@ -31,6 +31,10 @@ class BinaCPP {
         
         static void get_allPrices(Json::Value &json_result);
         static double get_price(const char *symbol);
+        static void get_depth( const char *symbol, int limit, Json::Value &json_result );
+		static void get_aggTrades( const char *symbol, int fromId, time_t startTime, time_t endTime, int limit, Json::Value &json_result ); 
+		static void get_24hr( const char *symbol, Json::Value &json_result ); 
+		static void get_klines( const char *symbol, const char *interval, int limit, time_t startTime, time_t endTime,  Json::Value &json_result );
 
 
 };

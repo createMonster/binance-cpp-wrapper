@@ -115,6 +115,108 @@ BinaCPP::get_price(const char *symbol) {
     return ret;
 }
 
+void
+BinaCPP::get_depth(
+        const char *symbol,
+        int limit,
+        Json::Value &json_result
+) {
+    BinaCPP_logger::write_log("<BinaCPP::get_depth>");
+    string url(BINANCE_HOST);
+    url += "/api/v1/depth?";
+    
+    string querystring("symbol=");
+	querystring.append( symbol );
+	querystring.append("&limit=");
+	querystring.append( to_string( limit ) );
+
+    url.append(querystring);
+    BinaCPP_logger::write_log( "<BinaCPP::get_depth> url = |%s|" , url.c_str() ) ;
+    
+    string str_result;
+    curl_api(url, str_result);
+    
+    if (str_result.size() > 0) {
+        try {
+            Json::Reader reader;
+            json_result.clear()
+            reader.parse(str_reslt, json_result);
+        }
+        catch (exception &e) {
+            BinaCPP_logger::write_log("<BinaCPP::get_depth> Error! %s", e.what());
+        }
+        BinaCPP_logger::write_log("<BinaCPP::get_depth> Done.");
+    }
+    else {
+        BinaCPP_logger::write_log("<BinaCPP::get_depth> Failed to get anything.");
+    }
+}
+
+//--------------------
+// Get Aggregated Trades list
+/*
+
+GET /api/v1/aggTrades
+
+Name		Type	Mandatory	Description
+symbol		STRING	YES	
+fromId		LONG	NO		ID to get aggregate trades from INCLUSIVE.
+startTime	LONG	NO		Timestamp in ms to get aggregate trades from INCLUSIVE.
+endTime		LONG	NO		Timestamp in ms to get aggregate trades until INCLUSIVE.
+limit		INT	NO		Default 500; max 500.
+*/
+
+void 
+BinaCPP::get_aggTrades(
+        const char *symbol,
+        int fromId,
+        time_t startTime,
+        time_t endTime,
+        int limit
+) {
+    BinaCPP_logger::write_log("<BinaCPP::get_aggTrades>");
+    string url(BINANCE_HOST);
+    url += "/api/v1/aggTrades?";
+
+	string querystring("symbol=");
+	querystring.append( symbol );
+    
+    if (startTime != 0 && endTime != 0) {
+        querystring.append("&startTime=");
+		querystring.append( to_string( startTime ) );
+
+		querystring.append("&endTime=");
+		querystring.append( to_string( endTime ) );
+    }
+    else {
+        querystring.append("&fromId=");
+		querystring.append( to_string( fromId ) );
+
+		querystring.append("&limit=");
+		querystring.append( to_string( limit ) );
+    }
+    url.append(querystring);
+    BinaCPP_logger::write_log( "<BinaCPP::get_aggTrades> url = |%s|" , url.c_str() ) ;
+    
+    string str_result;
+    curl_api(url, str_result);
+    
+    if (str_result.size() > 0) {
+        try {
+            Json::Reader reader;
+            json_result.clear()
+            reader.parse(str_reslt, json_result);
+        }
+        catch (exception &e) {
+            BinaCPP_logger::write_log("<BinaCPP::get_aggTrades> Error! %s", e.what());
+        }
+        BinaCPP_logger::write_log("<BinaCPP::get_aggTrades> Done.");
+    }
+    else {
+        BinaCPP_logger::write_log("<BinaCPP::get_aggTrades> Failed to get anything.");
+    }
+}
+
 
 void
 BinaCPP::curl_api(string &url, string &result_json) {

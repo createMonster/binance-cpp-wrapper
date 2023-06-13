@@ -1,5 +1,6 @@
 #include "binacpp.h"
 #include "binacpp_logger.h"
+#include "binacpp_utils.h"
 
 using std::atof;
 
@@ -214,6 +215,174 @@ BinaCPP::get_aggTrades(
     }
     else {
         BinaCPP_logger::write_log("<BinaCPP::get_aggTrades> Failed to get anything.");
+    }
+}
+
+//--------------------
+// Get 24hr ticker price change statistics
+/*
+Name	Type	Mandatory	Description
+symbol	STRING	YES	
+*/
+void
+BinaCPP::get_24hr(const char *symbol, Json::Value &json_result) {
+    BinaCPP_logger.write_log("<BinaCPP::get_24hr>");
+    string url(BINANCE_HOST);
+    url += "/api/v1/ticker/24hr?";
+
+	string querystring("symbol=");
+	querystring.append( symbol );
+    url.append(querystring);
+    BinaCPP_logger.write_log("<BinaCPP::get_24hr> url = |%s|", url.c_str());
+    
+    string str_reuslt;
+    curl_api(str_reuslt);
+    if ( str_result.size() > 0 ) {
+		
+		try {
+            Json::Reader reader;
+            json_result.clear();	
+            reader.parse( str_result , json_result );
+	    		
+		} catch ( exception &e ) {
+		 	BinaCPP_logger::write_log( "<BinaCPP::get_24hr> Error ! %s", e.what() ); 
+		}   
+		BinaCPP_logger::write_log( "<BinaCPP::get_24hr> Done." ) ;
+	
+	} else {
+		BinaCPP_logger::write_log( "<BinaCPP::get_24hr> Failed to get anything." ) ;
+	}
+
+}
+
+//-----------------
+/*
+
+Get KLines( Candle stick / OHLC )
+GET /api/v1/klines
+
+Name		Type	Mandatory	Description
+symbol		STRING	YES	
+interval	ENUM	YES	
+limit		INT		NO	Default 500; max 500.
+startTime	LONG	NO	
+endTime		LONG	NO	
+
+*/
+
+void
+BinaCPP::get_klines(
+        const char *symbol, 
+        const char *interval,
+        int limit,
+        time_t startTime,
+        time_t endTime
+) {
+    BinaCPP_logger::write_log("<BinaCPP::get_klines>");
+    string url(BINANCE_HOST);
+    url += "/api/v1/klines?";
+    
+    string querystring = "symbol=";
+    querystring.append(symbol);
+    querystring.append( "&interval=" );
+	querystring.append( interval );
+
+	if ( startTime > 0 && endTime > 0 ) {
+
+		querystring.append("&startTime=");
+		querystring.append( to_string( startTime ) );
+
+		querystring.append("&endTime=");
+		querystring.append( to_string( endTime ) );
+	
+	} else if ( limit > 0 ) {
+		querystring.append("&limit=");
+		querystring.append( to_string( limit ) );
+	}
+
+    url.append(querystring);
+    BinaCPP_logger::write_log( "<BinaCPP::get_klines> url = |%s|" , url.c_str() ) ;
+	
+	string str_result;
+	curl_api( url, str_result ) ;
+
+	if ( str_result.size() > 0 ) {
+		
+		try {
+			Json::Reader reader;
+	    	json_result.clear();	
+			reader.parse( str_result , json_result );
+	    		
+		} catch ( exception &e ) {
+		 	BinaCPP_logger::write_log( "<BinaCPP::get_klines> Error ! %s", e.what() ); 
+		}   
+		BinaCPP_logger::write_log( "<BinaCPP::get_klines> Done." ) ;
+	
+	} 
+    else {
+		BinaCPP_logger::write_log( "<BinaCPP::get_klines> Failed to get anything." ) ;
+	}
+}
+
+//--------------------
+// Get current account information. (SIGNED)
+/*
+GET /api/v3/account
+
+Parameters:
+Name		Type	Mandatory	Description
+recvWindow	LONG	NO	
+timestamp	LONG	YES
+*/
+void
+BinaCPP::get_account(long recvWindow, Json::Value &json_result) {
+    
+    BinaCPP_logger.write_log("<BinaCPP::get_account>");
+    if (api_key.size() == 0 || secret_key.size() == 0) {
+        BinaCPP_logger.write_log("<BinaCPP::get_account> API Key and Secret Key has not been set.");
+        return;
+    }
+    string url(BINANCE_HOST);
+	url += "/api/v3/account?";
+	string action = "GET";
+
+    string querystring("timestamp=");
+    querystring.append(to_string(get_current_ms_epoch()));
+
+    if (recvWindow > 0) {
+        querystring.append("&recvWindow=");
+        querystring.append(to_string(recvWindow));
+    }
+    
+    string signature = hmac_sha256(secret_key.c_str(), api_key.cstr());
+    querystring.append("&signature=");
+    querystring.append(signature);
+    url.append(querystring);
+
+    vector<string> extra_http_header;
+    string header_chunk("X-MBX-APIKEY: ");
+    header_chunk.append(api_key);
+    extra_http_header.push_back(header_chunk);
+
+    BinaCPP_logger::write_log( "<BinaCPP::get_account> url = |%s|" , url.c_str() ) ;
+    
+    string post_data = "";
+    string str_result;
+    curl_api_with_header(url, str_result, extra_http_header, post_data, action);
+    
+    if (str_result.size() > 0) {
+        try {
+            Json::Reader reader;
+            json_result.clear();
+            reader.parse(str_result, json_result);
+        }
+        catch (exception &e) {
+            BinaCPP_logger::write_log( "<BinaCPP::get_account> Error ! %s", e.what() ); 
+        }
+        BinaCPP_logger::write_log( "<BinaCPP::get_account> Done.\n" ) ;
+    }
+    else {
+        BinaCPP_logger::write_log( "<BinaCPP::get_account> Failed to get anything." ) ;
     }
 }
 

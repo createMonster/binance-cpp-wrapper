@@ -37,6 +37,101 @@ class BinaCPP {
 		static void get_klines( const char *symbol, const char *interval, int limit, time_t startTime, time_t endTime,  Json::Value &json_result );
 
 
+        // API + Secret keys required
+		static void get_account( long recvWindow , Json::Value &json_result );
+		
+		static void get_myTrades( 
+			const char *symbol, 
+			int limit,
+			long fromId,
+			long recvWindow, 
+			Json::Value &json_result 
+		);
+		
+		static void get_openOrders(  
+			const char *symbol, 
+			long recvWindow,   
+			Json::Value &json_result 
+		) ;
+		
+
+		static void get_allOrders(   
+			const char *symbol, 
+			long orderId,
+			int limit,
+			long recvWindow,
+			Json::Value &json_result 
+		);
+
+
+		static void send_order( 
+			const char *symbol, 
+			const char *side,
+			const char *type,
+			const char *timeInForce,
+			double quantity,
+			double price,
+			const char *newClientOrderId,
+			double stopPrice,
+			double icebergQty,
+			long recvWindow,
+			Json::Value &json_result ) ;
+
+
+		static void get_order( 
+			const char *symbol, 
+			long orderId,
+			const char *origClientOrderId,
+			long recvWindow,
+			Json::Value &json_result ); 
+
+
+		static void cancel_order( 
+			const char *symbol, 
+			long orderId,
+			const char *origClientOrderId,
+			const char *newClientOrderId,
+			long recvWindow,
+			Json::Value &json_result 
+		);
+
+		// API key required
+		static void start_userDataStream( Json::Value &json_result );
+		static void keep_userDataStream( const char *listenKey  );
+		static void close_userDataStream( const char *listenKey );
+
+
+		// WAPI
+		static void withdraw( 
+			const char *asset,
+			const char *address,
+			const char *addressTag,
+			double amount, 
+			const char *name,
+			long recvWindow,
+			Json::Value &json_result );
+
+		static void get_depositHistory( 
+			const char *asset,
+			int  status,
+			long startTime,
+			long endTime, 
+			long recvWindow,
+			Json::Value &json_result );
+
+		static void get_withdrawHistory( 
+			const char *asset,
+			int  status,
+			long startTime,
+			long endTime, 
+			long recvWindow,
+			Json::Value &json_result ); 
+
+		static void get_depositAddress( 
+			const char *asset,
+			long recvWindow,
+			Json::Value &json_result );
+
 };
 
 #endif

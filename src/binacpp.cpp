@@ -386,6 +386,94 @@ BinaCPP::get_account(long recvWindow, Json::Value &json_result) {
     }
 }
 
+//--------------------
+// Get trades for a specific account and symbol. (SIGNED)
+/*
+GET /api/v3/myTrades
+Name		Type	Mandatory	Description
+symbol		STRING	YES	
+limit		INT		NO	Default 500; max 500.
+fromId		LONG	NO	TradeId to fetch from. Default gets most recent trades.
+recvWindow	LONG	NO	
+timestamp	LONG	YES
+	
+*/
+
+void 
+BinaCPP::get_myTrades(
+        const char *symbol,
+        int limit,
+        long fromId,
+        long recvWindow,
+        Json::Value &json_result
+) {
+    BinaCPP_logger.write_log("<BinaCPP::getMyTrades>");
+    if ( api_key.size() == 0 || secret_key.size() == 0 ) {
+		BinaCPP_logger::write_log( "<BinaCPP::get_myTrades> API Key and Secret Key has not been set." ) ;
+		return ;
+	}
+    string url(BINANCE_HOST);
+    url += "/api/v3/myTrades?";
+    
+    string querystring = "symbol=";
+    querystring.append(symbol);
+    
+    if (limit > 0) {
+        querystring.append("&limit=");
+        querystring.append(to_string(limit));
+    }
+    if ( fromId > 0 ) {
+		querystring.append("&fromId=");
+		querystring.append( to_string( fromId ) );
+	}
+
+	if ( recvWindow > 0 ) {
+		querystring.append("&recvWindow=");
+		querystring.append( to_string( recvWindow ) );
+	}
+
+	querystring.append("&timestamp=");
+	querystring.append( to_string( get_current_ms_epoch() ) );
+
+	string signature =  hmac_sha256( secret_key.c_str() , querystring.c_str() );
+	querystring.append( "&signature=");
+	querystring.append( signature );
+
+	url.append( querystring );
+	vector <string> extra_http_header;
+	string header_chunk("X-MBX-APIKEY: ");
+	header_chunk.append( api_key );
+	extra_http_header.push_back(header_chunk);
+
+	BinaCPP_logger::write_log( "<BinaCPP::get_myTrades> url = |%s|" , url.c_str() ) ;
+	
+	string action = "GET";
+	string post_data = "";
+
+	string str_result;
+	curl_api_with_header( url, str_result , extra_http_header , post_data , action ) ;
+
+
+	if ( str_result.size() > 0 ) {
+		
+		try {
+			Json::Reader reader;
+			json_result.clear();	
+			reader.parse( str_result , json_result );
+	    		
+	    	} catch ( exception &e ) {
+		 	BinaCPP_logger::write_log( "<BinaCPP::get_myTrades> Error ! %s", e.what() ); 
+		}   
+		BinaCPP_logger::write_log( "<BinaCPP::get_myTrades> Done." ) ;
+	
+	} else {
+		BinaCPP_logger::write_log( "<BinaCPP::get_myTrades> Failed to get anything." ) ;
+	}
+
+	BinaCPP_logger::write_log( "<BinaCPP::get_myTrades> Done.\n" ) ;
+
+}
+
 
 void
 BinaCPP::curl_api(string &url, string &result_json) {
